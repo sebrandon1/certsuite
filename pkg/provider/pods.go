@@ -265,6 +265,62 @@ func getCNCFNetworksNamesFromPodAnnotation(networksAnnotation string) []string {
 	return networkNames
 }
 
+// isNetworkAttachmentDefinitionSRIOVConfigMTUSet is a helper function to check whether a CNI config
+// string has any config for MTU for SRIOV configs only
+//
+
+/*
+	{
+		"cniVersion": "0.4.0",
+		"name": "vlan-100",
+		"plugins": [
+			{
+				"type": "sriov",
+				"master": "ext0",
+				"mtu": 1500,
+				"vlanId": 100,
+				"linkInContainer": true,
+				"ipam": {"type": "whereabouts", "ipRanges": [{"range": "1.1.1.0/24"}]}
+			}
+		]
+	}
+*/
+func isNetworkAttachmentDefinitionSRIOVConfigMTUSet(nadConfig string) (bool, error) {
+	const (
+		typeSriov = "sriov"
+	)
+
+	type CNIConfig struct {
+		CniVersion string  `json:"cniVersion"`
+		Name       string  `json:"name"`
+		Type       *string `json:"type,omitempty"`
+		Plugins    *[]struct {
+			Type string `json:"type"`
+			MTU  int    `json:"mtu"`
+		} `json:"plugins,omitempty"`
+	}
+
+	cniConfig := CNIConfig{}
+	if err := json.Unmarshal([]byte(nadConfig), &cniConfig); err != nil {
+		return false, fmt.Errorf("failed to unmarshal cni config %s: %v", nadConfig, err)
+	}
+
+	if cniConfig.Plugins == nil {
+		return false, fmt.Errorf("invalid multi-plugins cni config: %s", nadConfig)
+	}
+
+	log.Debug("CNI plugins: %+v", *cniConfig.Plugins)
+	for i := range *cniConfig.Plugins {
+		plugin := (*cniConfig.Plugins)[i]
+		if plugin.Type == typeSriov && plugin.MTU > 0 {
+			return true, nil
+		}
+	}
+
+	// No sriov plugin type found.
+	return false, nil
+}
+
 // isNetworkAttachmentDefinitionConfigTypeSRIOV is a helper function to check whether a CNI
 // config string has any config for sriov plugin.
 // CNI config has two modes: single CNI plugin, or multi-plugins:
