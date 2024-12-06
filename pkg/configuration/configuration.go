@@ -117,4 +117,6 @@ type TestParameters struct {
 	EnableXMLCreation             bool
 	ServerMode                    bool
 	Timeout                       time.Duration
+	ConnectAPIKey                 string
+	ConnectProjectID              string
 }

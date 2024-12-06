@@ -16,6 +16,9 @@ const (
 	// tarGz file prefix layout format: YearMonthDay-HourMinSec
 	tarGzFileNamePrefixLayout = "20060102-150405"
 	tarGzFileNameSuffix       = "cnf-test-results.tar.gz"
+
+	// Connect API Information
+	connectAPIURL = "https://access.qa.redhat.com/hydra/cwe/rest/v1.0/attachments/upload"
 )
 
 func generateZipFileName() string {
@@ -38,14 +41,14 @@ func getFileTarHeader(file string) (*tar.Header, error) {
 }
 
 // Creates a zip file in the outputDir containing each file in the filePaths slice.
-func CompressResultsArtifacts(outputDir string, filePaths []string) error {
+func CompressResultsArtifacts(outputDir string, filePaths []string) (string, error) {
 	zipFileName := generateZipFileName()
 	zipFilePath := filepath.Join(outputDir, zipFileName)
 
 	log.Info("Compressing results artifacts into %s", zipFilePath)
 	zipFile, err := os.Create(zipFilePath)
 	if err != nil {
-		return fmt.Errorf("failed creating tar.gz file %s in dir %s (filepath=%s): %v",
+		return "", fmt.Errorf("failed creating tar.gz file %s in dir %s (filepath=%s): %v",
 			zipFileName, outputDir, zipFilePath, err)
 	}
 
@@ -60,25 +63,39 @@ func CompressResultsArtifacts(outputDir string, filePaths []string) error {
 
 		tarHeader, err := getFileTarHeader(file)
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		err = tarWriter.WriteHeader(tarHeader)
 		if err != nil {
-			return fmt.Errorf("failed to write tar header for %s: %v", file, err)
+			return "", fmt.Errorf("failed to write tar header for %s: %v", file, err)
 		}
 
 		f, err := os.Open(file)
 		if err != nil {
-			return fmt.Errorf("failed to open file %s: %v", file, err)
+			return "", fmt.Errorf("failed to open file %s: %v", file, err)
 		}
 
 		if _, err = io.Copy(tarWriter, f); err != nil {
-			return fmt.Errorf("failed to tar file %s: %v", file, err)
+			return "", fmt.Errorf("failed to tar file %s: %v", file, err)
 		}
 
 		f.Close()
 	}
+
+	// Return the entire path to the zip file
+	return zipFilePath, nil
+}
+
+// curl --location 'https://access.qa.redhat.com/hydra/cwe/rest/v1.0/attachments/upload' \
+// --header 'x-api-key: API_KEY' \
+// --form 'type="RhocpBestPracticeTestResult"' \
+// --form 'attachment=@"/Users/yangli/Downloads/rhocp-best-practice-test-results/20240925-143237-cnf-test-results.tar.gz"' \
+// --form 'certId="652787"' \
+// --form 'description="aaa"'
+
+func SendResultsToConnectAPI(zipFile, apiKey, projectID string) error {
+	log.Info("Sending results to Red Hat Connect")
 
 	return nil
 }
