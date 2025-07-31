@@ -24,7 +24,15 @@ Please contact us in case the documentation is broken.
 
 * The catalog of all the available test cases can be found in the [test catalog](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md).
 
+## 🌙 Nightly Dashboard
 
+View the **[nightly QE dashboard](https://redhat-best-practices-for-k8s.github.io/certsuite/nightly-html/)** for real-time status of:
+* 🚀 OCP Regular Testing (versions 4.14-4.19)
+* ⚠️ OCP Intrusive Testing across all versions  
+* 🔧 ARM64 and Ubuntu-hosted testing
+* 📊 Overall nightly testing health and success rates
+
+The dashboard automatically refreshes every 5 minutes and shows the latest status of all monitored nightly workflows.
 
 ## Demo
 
