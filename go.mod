@@ -13,10 +13,8 @@ require (
 	github.com/k8snetworkplumbingwg/network-attachment-definition-client v1.7.7
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mittwald/go-helm-client v0.12.18
-	github.com/openshift/api v3.9.0+incompatible
-	github.com/openshift/client-go v0.0.0-20250106104058-89709a455e2a
 	github.com/operator-framework/api v0.34.0
-	github.com/operator-framework/operator-lifecycle-manager v0.22.0
+	github.com/operator-framework/operator-lifecycle-manager v0.0.0-00010101000000-000000000000
 	github.com/redhat-best-practices-for-k8s/certsuite-claim v1.0.57
 	github.com/redhat-best-practices-for-k8s/oct v0.0.47
 	github.com/redhat-best-practices-for-k8s/privileged-daemonset v1.0.58
@@ -131,6 +129,8 @@ require (
 	github.com/onsi/gomega v1.36.2 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
+	github.com/openshift/api v3.9.0+incompatible // indirect
+	github.com/openshift/client-go v0.0.0-20240510131258-f646d5f29250 // indirect
 	github.com/operator-framework/operator-manifest-tools v0.8.0 // indirect
 	github.com/operator-framework/operator-registry v1.50.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
@@ -211,7 +211,8 @@ require (
 )
 
 replace (
-	github.com/openshift/api => github.com/openshift/api v0.0.0-20250108172834-78bd56dba39b
 	github.com/operator-framework/operator-lifecycle-manager => github.com/operator-framework/operator-lifecycle-manager v0.31.0
 	github.com/redhat-openshift-ecosystem/openshift-preflight => github.com/redhat-openshift-ecosystem/openshift-preflight v0.0.0-20250304173539-1adc5822eb99
 )
+
+replace github.com/openshift/api => github.com/openshift/api v0.0.0-20250108172834-78bd56dba39b
