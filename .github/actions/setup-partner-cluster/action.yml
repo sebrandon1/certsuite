@@ -20,7 +20,7 @@ runs:
         path: certsuite-sample-workload
 
     - name: Setup quick-k8s cluster
-      uses: palmsoftware/quick-k8s@v0.0.59
+      uses: palmsoftware/quick-k8s@v0.0.60
       with:
         disableDefaultCni: true
         numControlPlaneNodes: 1
@@ -30,7 +30,7 @@ runs:
         removeControlPlaneTaint: true
 
     - name: Run 'make ${{inputs.make-command}}'
-      uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
+      uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
       with:
         timeout_minutes: 150
         max_attempts: 3
