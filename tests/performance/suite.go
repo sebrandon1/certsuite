@@ -24,13 +24,13 @@ import (
 
 	"github.com/redhat-best-practices-for-k8s/certsuite/internal/crclient"
 	"github.com/redhat-best-practices-for-k8s/certsuite/internal/log"
+	"github.com/redhat-best-practices-for-k8s/certsuite/pkg/checksadapter"
 	"github.com/redhat-best-practices-for-k8s/certsuite/pkg/checksdb"
 	"github.com/redhat-best-practices-for-k8s/certsuite/pkg/provider"
-	"github.com/redhat-best-practices-for-k8s/certsuite/pkg/scheduling"
 	"github.com/redhat-best-practices-for-k8s/certsuite/pkg/testhelper"
 	"github.com/redhat-best-practices-for-k8s/certsuite/tests/accesscontrol/resources"
 	"github.com/redhat-best-practices-for-k8s/certsuite/tests/common"
-	"github.com/redhat-best-practices-for-k8s/certsuite/tests/identifiers"
+	checksfn "github.com/redhat-best-practices-for-k8s/checks/performance"
 )
 
 const (
@@ -85,55 +85,33 @@ func LoadChecks() {
 	checksGroup := checksdb.NewChecksGroup(common.PerformanceTestKey).
 		WithBeforeEachFn(beforeEachFn)
 
-	checksGroup.Add(checksdb.NewCheck(identifiers.GetTestIDAndLabels(identifiers.TestExclusiveCPUPoolIdentifier)).
+	checksGroup.Add(checksdb.NewCheck(checksadapter.GetCheckIDAndLabels("performance-exclusive-cpu-pool")).
 		WithSkipCheckFn(testhelper.GetNoPodsUnderTestSkipFn(&env)).
-		WithCheckFn(func(c *checksdb.Check) error {
-			testExclusiveCPUPool(c, &env)
-			return nil
-		}))
+		WithCheckFn(checksadapter.NewAdapter(checksfn.CheckExclusiveCPUPool).MakeCheckFn(&env)))
 
-	checksGroup.Add(checksdb.NewCheck(identifiers.GetTestIDAndLabels(identifiers.TestRtAppNoExecProbes)).
+	checksGroup.Add(checksdb.NewCheck(checksadapter.GetCheckIDAndLabels("performance-rt-apps-no-exec-probes")).
 		WithSkipCheckFn(skipIfNoGuaranteedPodContainersWithExclusiveCPUs).
-		WithCheckFn(func(c *checksdb.Check) error {
-			testRtAppsNoExecProbes(c, &env)
-			return nil
-		}))
+		WithCheckFn(checksadapter.NewAdapter(checksfn.CheckRTAppsNoExecProbes).MakeCheckFn(&env)))
 
-	checksGroup.Add(checksdb.NewCheck(identifiers.GetTestIDAndLabels(identifiers.TestSharedCPUPoolSchedulingPolicy)).
+	checksGroup.Add(checksdb.NewCheck(checksadapter.GetCheckIDAndLabels("performance-shared-cpu-pool-non-rt-scheduling-policy")).
 		WithSkipCheckFn(skipIfNoNonGuaranteedPodContainersWithoutHostPID).
-		WithCheckFn(func(c *checksdb.Check) error {
-			testSchedulingPolicyInCPUPool(c, &env, env.GetNonGuaranteedPodContainersWithoutHostPID(), scheduling.SharedCPUScheduling)
-			return nil
-		}))
+		WithCheckFn(checksadapter.NewAdapter(checksfn.CheckSharedCPUPoolSchedulingPolicy).MakeCheckFn(&env)))
 
-	checksGroup.Add(checksdb.NewCheck(identifiers.GetTestIDAndLabels(identifiers.TestExclusiveCPUPoolSchedulingPolicy)).
+	checksGroup.Add(checksdb.NewCheck(checksadapter.GetCheckIDAndLabels("performance-exclusive-cpu-pool-rt-scheduling-policy")).
 		WithSkipCheckFn(skipIfNoGuaranteedPodContainersWithExclusiveCPUsWithoutHostPID).
-		WithCheckFn(func(c *checksdb.Check) error {
-			testSchedulingPolicyInCPUPool(c, &env, env.GetGuaranteedPodContainersWithExclusiveCPUsWithoutHostPID(), scheduling.ExclusiveCPUScheduling)
-			return nil
-		}))
+		WithCheckFn(checksadapter.NewAdapter(checksfn.CheckExclusiveCPUPoolSchedulingPolicy).MakeCheckFn(&env)))
 
-	checksGroup.Add(checksdb.NewCheck(identifiers.GetTestIDAndLabels(identifiers.TestIsolatedCPUPoolSchedulingPolicy)).
+	checksGroup.Add(checksdb.NewCheck(checksadapter.GetCheckIDAndLabels("performance-isolated-cpu-pool-rt-scheduling-policy")).
 		WithSkipCheckFn(skipIfNoGuaranteedPodContainersWithIsolatedCPUsWithoutHostPID).
-		WithCheckFn(func(c *checksdb.Check) error {
-			testSchedulingPolicyInCPUPool(c, &env, env.GetGuaranteedPodContainersWithIsolatedCPUsWithoutHostPID(), scheduling.ExclusiveCPUScheduling)
-			return nil
-		}))
+		WithCheckFn(checksadapter.NewAdapter(checksfn.CheckIsolatedCPUPoolSchedulingPolicy).MakeCheckFn(&env)))
 
-	checksGroup.Add(checksdb.NewCheck(identifiers.GetTestIDAndLabels(identifiers.TestLimitedUseOfExecProbesIdentifier)).
+	checksGroup.Add(checksdb.NewCheck(checksadapter.GetCheckIDAndLabels("performance-max-resources-exec-probes")).
 		WithSkipCheckFn(testhelper.GetNoPodsUnderTestSkipFn(&env)).
-		WithCheckFn(func(c *checksdb.Check) error {
-			testLimitedUseOfExecProbes(c, &env)
-			return nil
-		}))
+		WithCheckFn(checksadapter.NewAdapter(checksfn.CheckMaxResourcesExecProbes).MakeCheckFn(&env)))
 
-	checksGroup.Add(checksdb.NewCheck(identifiers.GetTestIDAndLabels(identifiers.TestCPUPinningNoExecProbes)).
+	checksGroup.Add(checksdb.NewCheck(checksadapter.GetCheckIDAndLabels("performance-cpu-pinning-no-exec-probes")).
 		WithSkipCheckFn(skipIfNoGuaranteedPodContainersWithExclusiveCPUs).
-		WithCheckFn(func(c *checksdb.Check) error {
-			cpuPinnedPods := env.GetGuaranteedPodsWithExclusiveCPUs()
-			testCPUPinningNoExecProbes(c, cpuPinnedPods)
-			return nil
-		}))
+		WithCheckFn(checksadapter.NewAdapter(checksfn.CheckCPUPinningNoExecProbes).MakeCheckFn(&env)))
 }
 
 //nolint:funlen
@@ -249,42 +227,6 @@ func testExclusiveCPUPool(check *checksdb.Check, env *provider.TestEnvironment) 
 	check.SetResult(compliantObjects, nonCompliantObjects)
 }
 
-func testSchedulingPolicyInCPUPool(check *checksdb.Check, env *provider.TestEnvironment,
-	podContainers []*provider.Container, schedulingType string) {
-	var compliantContainersPids []*testhelper.ReportObject
-	var nonCompliantContainersPids []*testhelper.ReportObject
-	for _, cut := range podContainers {
-		check.LogInfo("Testing Container %q", cut)
-
-		// Get the pid namespace
-		pidNamespace, err := crclient.GetContainerPidNamespace(cut, env)
-		if err != nil {
-			check.LogError("Unable to get pid namespace for Container %q, err: %v", cut, err)
-			nonCompliantContainersPids = append(nonCompliantContainersPids,
-				testhelper.NewContainerReportObject(cut.Namespace, cut.Podname, cut.Name, fmt.Sprintf("Internal error, err=%s", err), false))
-			continue
-		}
-		check.LogDebug("PID namespace for Container %q is %q", cut, pidNamespace)
-
-		// Get the list of process ids running in the pid namespace
-		processes, err := crclient.GetPidsFromPidNamespace(pidNamespace, cut)
-		if err != nil {
-			check.LogError("Unable to get PIDs from PID namespace %q for Container %q, err: %v", pidNamespace, cut, err)
-			nonCompliantContainersPids = append(nonCompliantContainersPids,
-				testhelper.NewContainerReportObject(cut.Namespace, cut.Podname, cut.Name, fmt.Sprintf("Internal error, err=%s", err), false))
-			continue
-		}
-
-		compliantPids, nonCompliantPids := scheduling.ProcessPidsCPUScheduling(processes, cut, schedulingType, check.GetLogger())
-		// Check for the specified priority for each processes running in that pid namespace
-
-		compliantContainersPids = append(compliantContainersPids, compliantPids...)
-		nonCompliantContainersPids = append(nonCompliantContainersPids, nonCompliantPids...)
-	}
-
-	check.SetResult(compliantContainersPids, nonCompliantContainersPids)
-}
-
 func getExecProbesCmds(c *provider.Container) map[string]bool {
 	cmds := map[string]bool{}
 
@@ -307,65 +249,6 @@ func getExecProbesCmds(c *provider.Container) map[string]bool {
 	}
 
 	return cmds
-}
-
-func testRtAppsNoExecProbes(check *checksdb.Check, env *provider.TestEnvironment) {
-	var compliantObjects []*testhelper.ReportObject
-	var nonCompliantObjects []*testhelper.ReportObject
-	cuts := env.GetNonGuaranteedPodContainersWithoutHostPID()
-	for _, cut := range cuts {
-		check.LogInfo("Testing Container %q", cut)
-		if !cut.HasExecProbes() {
-			check.LogInfo("Container %q does not define exec probes", cut)
-			compliantObjects = append(compliantObjects, testhelper.NewContainerReportObject(cut.Namespace, cut.Podname, cut.Name, "Container does not define exec probes", true))
-			continue
-		}
-
-		processes, err := crclient.GetContainerProcesses(cut, env)
-		if err != nil {
-			check.LogError("Could not determine the processes pids for container %q, err: %v", cut, err)
-			nonCompliantObjects = append(nonCompliantObjects, testhelper.NewContainerReportObject(cut.Namespace, cut.Podname, cut.Name, "Could not determine the processes pids for container", false))
-			break
-		}
-
-		notExecProbeProcesses, compliantObjectsProbes := filterProbeProcesses(processes, cut)
-		compliantObjects = append(compliantObjects, compliantObjectsProbes...)
-		allProcessesCompliant := true
-		for _, p := range notExecProbeProcesses {
-			check.LogInfo("Testing process %q", p)
-			schedPolicy, _, err := scheduling.GetProcessCPUScheduling(p.Pid, cut)
-			if err != nil {
-				// If the process does not exist anymore it means that it has finished since the time the process list
-				// was retrieved. In this case, just ignore the error and continue processing the rest of the processes.
-				if strings.Contains(err.Error(), scheduling.NoProcessFoundErrMsg) {
-					check.LogWarn("Container process %q disappeared", p)
-					compliantObjects = append(compliantObjects, testhelper.NewContainerReportObject(cut.Namespace, cut.Podname, cut.Name, "Container process disappeared", true).
-						AddField(testhelper.ProcessID, strconv.Itoa(p.Pid)).
-						AddField(testhelper.ProcessCommandLine, p.Args))
-					continue
-				}
-				check.LogError("Could not determine the scheduling policy for container %q (pid=%d), err: %v", cut, p.Pid, err)
-				nonCompliantObjects = append(nonCompliantObjects, testhelper.NewContainerReportObject(cut.Namespace, cut.Podname, cut.Name, "Could not determine the scheduling policy for container", false).
-					AddField(testhelper.ProcessID, strconv.Itoa(p.Pid)).
-					AddField(testhelper.ProcessCommandLine, p.Args))
-				allProcessesCompliant = false
-				continue
-			}
-			if scheduling.PolicyIsRT(schedPolicy) {
-				check.LogError("Container %q defines exec probes while having a RT scheduling policy for process %q", cut, p)
-				nonCompliantObjects = append(nonCompliantObjects, testhelper.NewContainerReportObject(cut.Namespace, cut.Podname, cut.Name, "Container defines exec probes while having a RT scheduling policy", false).
-					AddField(testhelper.ProcessID, strconv.Itoa(p.Pid)))
-				allProcessesCompliant = false
-			}
-		}
-
-		if allProcessesCompliant {
-			check.LogInfo("Container %q defines exec probes but does not have a RT scheduling policy", cut)
-			compliantObjects = append(compliantObjects, testhelper.NewContainerReportObject(cut.Namespace, cut.Podname, cut.Name, "Container defines exec probes but does not have a RT scheduling policy", true))
-		}
-	}
-
-	check.SetResult(compliantObjects, nonCompliantObjects)
 }
 
 func filterProbeProcesses(allProcesses []*crclient.Process, cut *provider.Container) (notExecProbeProcesses []*crclient.Process, compliantObjects []*testhelper.ReportObject) {
