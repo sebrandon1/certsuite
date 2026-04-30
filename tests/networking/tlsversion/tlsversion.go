@@ -29,6 +29,7 @@ import (
 	clientconfigv1 "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
 	"github.com/redhat-best-practices-for-k8s/certsuite/internal/clientsholder"
 	"github.com/redhat-best-practices-for-k8s/certsuite/pkg/checksdb"
+	"github.com/redhat-best-practices-for-k8s/certsuite/pkg/configuration"
 	"github.com/redhat-best-practices-for-k8s/certsuite/pkg/provider"
 	"github.com/redhat-best-practices-for-k8s/certsuite/pkg/testhelper"
 	corev1 "k8s.io/api/core/v1"
@@ -759,16 +760,24 @@ func opensslVersionName(ver uint16) string {
 // openssl s_client. It finds the first available probe pod and runs
 // ProbeServicePortViaExec through it. Returns nil if no probe pods are available.
 func probeServicePortViaExecPod(check *checksdb.Check, env *provider.TestEnvironment, address string, port int32, policy TLSPolicy) *TLSProbeResult {
+	method := configuration.GetTestParameters().TLSProbeMethod
+
 	for nodeName, probePod := range env.ProbePods {
 		if probePod == nil || len(probePod.Spec.Containers) == 0 {
 			continue
 		}
-		check.LogInfo("Using probe pod on node %q for exec probe to %s:%d", nodeName, address, port)
-		result := ProbeServicePortViaExec(
-			clientsholder.GetClientsHolder(),
-			clientsholder.NewContext(probePod.Namespace, probePod.Name, probePod.Spec.Containers[0].Name),
-			address, port, policy,
-		)
+
+		ch := clientsholder.GetClientsHolder()
+		ctx := clientsholder.NewContext(probePod.Namespace, probePod.Name, probePod.Spec.Containers[0].Name)
+
+		var result TLSProbeResult
+		if method == probeMethodTestSSL {
+			check.LogInfo("Using probe pod on node %q for testssl.sh probe to %s:%d", nodeName, address, port)
+			result = ProbeServicePortViaTestSSL(ch, ctx, address, port, policy)
+		} else {
+			check.LogInfo("Using probe pod on node %q for openssl exec probe to %s:%d", nodeName, address, port)
+			result = ProbeServicePortViaExec(ch, ctx, address, port, policy)
+		}
 		return &result
 	}
 	return nil

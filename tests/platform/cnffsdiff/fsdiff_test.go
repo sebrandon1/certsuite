@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/redhat-best-practices-for-k8s/certsuite/internal/clientsholder"
 	"github.com/redhat-best-practices-for-k8s/certsuite/pkg/checksdb"
@@ -32,6 +33,10 @@ type ClientHoldersMock struct {
 	stdout string
 	stderr string
 	err    error
+}
+
+func (o ClientHoldersMock) ExecCommandContainerWithTimeout(ctx clientsholder.Context, cmd string, _ time.Duration) (stdout, stderr string, err error) {
+	return o.ExecCommandContainer(ctx, cmd)
 }
 
 func (o ClientHoldersMock) ExecCommandContainer(_ clientsholder.Context, cmd string) (stdout, stderr string, err error) {
@@ -128,6 +133,10 @@ type ClientHoldersMountCustomPodmanMock struct {
 	MountPhaseReached bool
 }
 
+func (o *ClientHoldersMountCustomPodmanMock) ExecCommandContainerWithTimeout(ctx clientsholder.Context, cmd string, _ time.Duration) (stdout, stderr string, err error) {
+	return o.ExecCommandContainer(ctx, cmd)
+}
+
 func (o *ClientHoldersMountCustomPodmanMock) ExecCommandContainer(_ clientsholder.Context, _ string) (stdout, stderr string, err error) {
 	if o.MountPhaseReached {
 		if o.mountFolderStdout != "" || o.mountFolderStderr != "" || o.mountFolderErr != nil {
@@ -206,6 +215,10 @@ type ClientHoldersUnmountCustomPodmanMock struct {
 	// Since there are two calls to ExecCommandContainer inside fsdiff.RunTest(), we'll use a toggle bool
 	// to control which call to ExecCommandContainer should work.
 	DeletePhaseReached bool
+}
+
+func (o *ClientHoldersUnmountCustomPodmanMock) ExecCommandContainerWithTimeout(ctx clientsholder.Context, cmd string, _ time.Duration) (stdout, stderr string, err error) {
+	return o.ExecCommandContainer(ctx, cmd)
 }
 
 func (o *ClientHoldersUnmountCustomPodmanMock) ExecCommandContainer(_ clientsholder.Context, cmd string) (stdout, stderr string, err error) {

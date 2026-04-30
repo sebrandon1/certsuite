@@ -54,6 +54,7 @@ func NewCommand() *cobra.Command {
 	runCmd.PersistentFlags().String("connect-api-proxy-url", "", "Proxy URL for Red Hat Connect API")
 	runCmd.PersistentFlags().String("connect-api-proxy-port", "", "Proxy port for Red Hat Connect API")
 	runCmd.PersistentFlags().Bool("cleanup-probe", true, "Delete the probe daemonset at the end of the test run")
+	runCmd.PersistentFlags().String("tls-probe-method", "openssl", "TLS probe method: 'openssl' (default) or 'testssl' (uses testssl.sh, slower but provides deeper TLS auditing)")
 
 	return runCmd
 }
@@ -89,6 +90,7 @@ func initTestParamsFromFlags(cmd *cobra.Command) error {
 	testParams.ConnectAPIProxyURL, _ = cmd.Flags().GetString("connect-api-proxy-url")
 	testParams.ConnectAPIProxyPort, _ = cmd.Flags().GetString("connect-api-proxy-port")
 	testParams.CleanupProbe, _ = cmd.Flags().GetBool("cleanup-probe")
+	testParams.TLSProbeMethod, _ = cmd.Flags().GetString("tls-probe-method")
 	timeoutStr, _ := cmd.Flags().GetString("timeout")
 
 	// Check if the output directory exists and, if not, create it

@@ -16,7 +16,10 @@
 
 package clientsholder
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 // Ensure MockCommand implements Command interface
 var _ Command = (*MockCommand)(nil)
@@ -44,6 +47,11 @@ type MockCommand struct {
 type execCall struct {
 	Context Context
 	Command string
+}
+
+// ExecCommandContainerWithTimeout implements the Command interface.
+func (m *MockCommand) ExecCommandContainerWithTimeout(ctx Context, command string, _ time.Duration) (stdout, stderr string, err error) {
+	return m.ExecCommandContainer(ctx, command)
 }
 
 // ExecCommandContainer implements the Command interface.

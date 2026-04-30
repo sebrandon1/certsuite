@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/redhat-best-practices-for-k8s/certsuite/internal/clientsholder"
@@ -59,6 +60,10 @@ type mockExecResult struct {
 
 func newMockCommand(patterns ...mockPattern) *mockCommand {
 	return &mockCommand{patterns: patterns}
+}
+
+func (m *mockCommand) ExecCommandContainerWithTimeout(ctx clientsholder.Context, command string, _ time.Duration) (stdout, stderr string, err error) {
+	return m.ExecCommandContainer(ctx, command)
 }
 
 func (m *mockCommand) ExecCommandContainer(_ clientsholder.Context, command string) (stdout, stderr string, err error) {

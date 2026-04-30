@@ -30,6 +30,7 @@ import (
 
 type Command interface {
 	ExecCommandContainer(Context, string) (string, string, error)
+	ExecCommandContainerWithTimeout(Context, string, time.Duration) (string, string, error)
 }
 
 const (
@@ -37,9 +38,15 @@ const (
 	ExecCommandTimeout = 30 * time.Second
 )
 
-// ExecCommand runs command in the pod and returns buffer output.
+// ExecCommandContainer runs command in the pod and returns buffer output.
 func (clientsholder *ClientsHolder) ExecCommandContainer(
 	ctx Context, command string) (stdout, stderr string, err error) {
+	return clientsholder.ExecCommandContainerWithTimeout(ctx, command, ExecCommandTimeout)
+}
+
+// ExecCommandContainerWithTimeout runs command in the pod with a custom timeout.
+func (clientsholder *ClientsHolder) ExecCommandContainerWithTimeout(
+	ctx Context, command string, timeout time.Duration) (stdout, stderr string, err error) {
 	commandStr := []string{"sh", "-c", command}
 	var buffOut bytes.Buffer
 	var buffErr bytes.Buffer
@@ -66,7 +73,7 @@ func (clientsholder *ClientsHolder) ExecCommandContainer(
 		return stdout, stderr, err
 	}
 	// enforce an execution timeout for the remote command
-	goCtx, cancel := context.WithTimeout(context.TODO(), ExecCommandTimeout)
+	goCtx, cancel := context.WithTimeout(context.TODO(), timeout)
 	defer cancel()
 
 	err = exec.StreamWithContext(goCtx, remotecommand.StreamOptions{

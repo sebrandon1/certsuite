@@ -4,6 +4,7 @@ package hugepages
 import (
 	"errors"
 	"testing"
+	"time"
 
 	mcv1 "github.com/openshift/api/machineconfiguration/v1"
 	"github.com/stretchr/testify/assert"
@@ -142,6 +143,10 @@ func Test_hugepagesFromKernelArgsFunc(t *testing.T) {
 
 type fakeK8sClient struct {
 	execCommandFunctionMocker func() (stdout string, stderr string, err error)
+}
+
+func (client *fakeK8sClient) ExecCommandContainerWithTimeout(ctx clientsholder.Context, cmd string, _ time.Duration) (stdout, stderr string, err error) {
+	return client.ExecCommandContainer(ctx, cmd)
 }
 
 func (client *fakeK8sClient) ExecCommandContainer(_ clientsholder.Context, _ string) (stdout, stderr string, err error) {

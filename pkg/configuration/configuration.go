@@ -142,4 +142,6 @@ type TestParameters struct {
 	AllowNonRunning bool
 	// CleanupProbe determines whether to delete the probe daemonset at the end of the run
 	CleanupProbe bool
+	// TLSProbeMethod selects the TLS probing backend: "openssl" (default) or "testssl"
+	TLSProbeMethod string
 }
