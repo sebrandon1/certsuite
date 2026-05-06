@@ -108,7 +108,7 @@ func (c *Container) SetPreflightResults(preflightImageCache map[string]Preflight
 	// Create artifacts handler
 	artifactsWriter, err := artifacts.NewMapWriter()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create artifacts writer for container preflight check: %w", err)
 	}
 	ctx := artifacts.ContextWithWriter(context.TODO(), artifactsWriter)
 

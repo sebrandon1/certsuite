@@ -21,6 +21,7 @@ package scaling
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/redhat-best-practices-for-k8s/certsuite/internal/clientsholder"
@@ -89,13 +90,12 @@ func scaleCrHelper(scalesGetter scale.ScalesGetter, rc schema.GroupResource, aut
 		name := autoscalerpram.GetName()
 		scalingObject, err := scalesGetter.Scales(namespace).Get(context.TODO(), rc, name, metav1.GetOptions{})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get scale object for %s/%s: %w", namespace, name, err)
 		}
 		scalingObject.Spec.Replicas = replicas
 		_, err = scalesGetter.Scales(namespace).Update(context.TODO(), rc, scalingObject, metav1.UpdateOptions{})
 		if err != nil {
-			logger.Error("Cannot update DynamicClient, err=%v", err)
-			return err
+			return fmt.Errorf("failed to update scale object for %s/%s: %w", namespace, name, err)
 		}
 		if !podsets.WaitForScalingToComplete(namespace, name, timeout, rc, logger) {
 			logger.Error("Cannot update CR %s:%s", namespace, name)
@@ -166,15 +166,13 @@ func scaleHpaCRDHelper(hpscaler hps.HorizontalPodAutoscalerInterface, hpaName, c
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		hpa, err := hpscaler.Get(context.TODO(), hpaName, metav1.GetOptions{})
 		if err != nil {
-			logger.Error("Cannot update autoscaler to scale %s:%s, err=%v", namespace, crName, err)
-			return err
+			return fmt.Errorf("failed to get HPA %s in namespace %s: %w", hpaName, namespace, err)
 		}
 		hpa.Spec.MinReplicas = &min
 		hpa.Spec.MaxReplicas = max
 		_, err = hpscaler.Update(context.TODO(), hpa, metav1.UpdateOptions{})
 		if err != nil {
-			logger.Error("Cannot update autoscaler to scale %s:%s, err=%v", namespace, crName, err)
-			return err
+			return fmt.Errorf("failed to update HPA %s in namespace %s: %w", hpaName, namespace, err)
 		}
 		if !podsets.WaitForScalingToComplete(namespace, crName, timeout, groupResourceSchema, logger) {
 			logger.Error("Cannot update CR %s:%s", namespace, crName)

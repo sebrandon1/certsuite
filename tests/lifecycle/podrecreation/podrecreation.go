@@ -53,7 +53,7 @@ func CordonHelper(name, operation string) error {
 		// Fetch node object
 		node, err := clients.K8sClient.CoreV1().Nodes().Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get node %s: %w", name, err)
 		}
 		switch operation {
 		case Cordon:
@@ -65,7 +65,10 @@ func CordonHelper(name, operation string) error {
 		}
 		// Update the node
 		_, err = clients.K8sClient.CoreV1().Nodes().Update(context.TODO(), node, metav1.UpdateOptions{})
-		return err
+		if err != nil {
+			return fmt.Errorf("failed to update node %s: %w", name, err)
+		}
+		return nil
 	})
 	if retryErr != nil {
 		log.Error("can not %s node: %s, err=%v", operation, name, retryErr)
@@ -124,8 +127,7 @@ func deletePod(pod *corev1.Pod, mode string, wg *sync.WaitGroup) error {
 		GracePeriodSeconds: &gracePeriodSeconds,
 	})
 	if err != nil {
-		log.Error("Error deleting %s err: %v", pod.String(), err)
-		return err
+		return fmt.Errorf("failed to delete pod %s/%s: %w", pod.Namespace, pod.Name, err)
 	}
 	if mode == DeleteBackground {
 		return nil

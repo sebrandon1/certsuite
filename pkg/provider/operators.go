@@ -86,7 +86,7 @@ func (op *Operator) SetPreflightResults(env *TestEnvironment) error {
 	// Create artifacts handler
 	artifactsWriter, err := artifacts.NewMapWriter()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create artifacts writer for operator preflight check: %w", err)
 	}
 	ctx := artifacts.ContextWithWriter(context.TODO(), artifactsWriter)
 	opts := []plibOperator.Option{}
@@ -337,7 +337,7 @@ func getOperatorTargetNamespaces(namespace string) ([]string, error) {
 	list, err := client.OlmClient.OperatorsV1().OperatorGroups(namespace).List(
 		context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list operator groups in namespace %s: %w", namespace, err)
 	}
 
 	if len(list.Items) == 0 {
@@ -352,7 +352,7 @@ func GetAllOperatorGroups() ([]*olmv1.OperatorGroup, error) {
 
 	list, err := client.OlmClient.OperatorsV1().OperatorGroups("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil && !k8serrors.IsNotFound(err) {
-		return nil, err
+		return nil, fmt.Errorf("failed to list all operator groups: %w", err)
 	}
 
 	if k8serrors.IsNotFound(err) {

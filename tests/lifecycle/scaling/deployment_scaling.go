@@ -20,6 +20,7 @@ package scaling
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/redhat-best-practices-for-k8s/certsuite/internal/clientsholder"
@@ -88,14 +89,12 @@ func scaleDeploymentHelper(client typedappsv1.AppsV1Interface, deployment *appsv
 		// RetryOnConflict uses exponential backoff to avoid exhausting the apiserver
 		dp, err := client.Deployments(deployment.Namespace).Get(context.TODO(), deployment.Name, v1machinery.GetOptions{})
 		if err != nil {
-			logger.Error("Failed to get latest version of Deployment %s:%s", deployment.Namespace, deployment.Name)
-			return err
+			return fmt.Errorf("failed to get deployment %s/%s: %w", deployment.Namespace, deployment.Name, err)
 		}
 		dp.Spec.Replicas = &replicas
 		_, err = client.Deployments(deployment.Namespace).Update(context.TODO(), dp, v1machinery.UpdateOptions{})
 		if err != nil {
-			logger.Error("Cannot update Deployment %s:%s", deployment.Namespace, deployment.Name)
-			return err
+			return fmt.Errorf("failed to update deployment %s/%s: %w", deployment.Namespace, deployment.Name, err)
 		}
 		if !podsets.WaitForDeploymentSetReady(deployment.Namespace, deployment.Name, timeout, logger) {
 			logger.Error("Cannot update Deployment %s:%s", deployment.Namespace, deployment.Name)
@@ -164,15 +163,13 @@ func scaleHpaDeploymentHelper(hpscaler hps.HorizontalPodAutoscalerInterface, hpa
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		hpa, err := hpscaler.Get(context.TODO(), hpaName, v1machinery.GetOptions{})
 		if err != nil {
-			logger.Error("Cannot update autoscaler to scale %s:%s , err=%v", namespace, deploymentName, err)
-			return err
+			return fmt.Errorf("failed to get HPA %s in namespace %s: %w", hpaName, namespace, err)
 		}
 		hpa.Spec.MinReplicas = &min
 		hpa.Spec.MaxReplicas = max
 		_, err = hpscaler.Update(context.TODO(), hpa, v1machinery.UpdateOptions{})
 		if err != nil {
-			logger.Error("Cannot update autoscaler to scale %s:%s, err=%v", namespace, deploymentName, err)
-			return err
+			return fmt.Errorf("failed to update HPA %s in namespace %s: %w", hpaName, namespace, err)
 		}
 		if !podsets.WaitForDeploymentSetReady(namespace, deploymentName, timeout, logger) {
 			logger.Error("Deployment not ready after scale operation %s:%s", namespace, deploymentName)

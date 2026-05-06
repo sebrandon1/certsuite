@@ -96,7 +96,7 @@ func dumpCsv(_ *cobra.Command, _ []string) error {
 	// Check claim format version
 	err = claim.CheckVersion(claimScheme.Claim.Versions.ClaimFormat)
 	if err != nil {
-		return err
+		return fmt.Errorf("claim format version check failed: %w", err)
 	}
 
 	// loads the mapping between CNF name and type

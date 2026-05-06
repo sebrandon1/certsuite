@@ -76,7 +76,7 @@ type catalogSummary struct {
 func emitTextFromFile(filename string) error {
 	text, err := os.ReadFile(filename)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read catalog template file %s: %w", filename, err)
 	}
 	fmt.Print(string(text))
 	return nil
