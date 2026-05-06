@@ -3,6 +3,7 @@ package collector
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -18,15 +19,15 @@ const (
 func addClaimFileToPostRequest(w *multipart.Writer, claimFilePath string) error {
 	claimFile, err := os.Open(claimFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open claim file %s: %w", claimFilePath, err)
 	}
 	defer claimFile.Close()
 	fw, err := w.CreateFormFile("claimFile", claimFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create form file field for claim: %w", err)
 	}
 	if _, err = io.Copy(fw, claimFile); err != nil {
-		return err
+		return fmt.Errorf("failed to copy claim file to multipart writer: %w", err)
 	}
 	return nil
 }
@@ -34,26 +35,26 @@ func addClaimFileToPostRequest(w *multipart.Writer, claimFilePath string) error 
 func addVarFieldsToPostRequest(w *multipart.Writer, executedBy, partnerName, password string) error {
 	fw, err := w.CreateFormField("executed_by")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create form field 'executed_by': %w", err)
 	}
 	if _, err = fw.Write([]byte(executedBy)); err != nil {
-		return err
+		return fmt.Errorf("failed to write 'executed_by' field: %w", err)
 	}
 
 	fw, err = w.CreateFormField("partner_name")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create form field 'partner_name': %w", err)
 	}
 	if _, err = fw.Write([]byte(partnerName)); err != nil {
-		return err
+		return fmt.Errorf("failed to write 'partner_name' field: %w", err)
 	}
 
 	fw, err = w.CreateFormField("decoded_password")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create form field 'decoded_password': %w", err)
 	}
 	if _, err = fw.Write([]byte(password)); err != nil {
-		return err
+		return fmt.Errorf("failed to write 'decoded_password' field: %w", err)
 	}
 	return nil
 }
@@ -80,7 +81,7 @@ func createSendToCollectorPostRequest(endPoint, claimFilePath, executedBy, partn
 	// Create POST request with the form-data as body
 	req, err := http.NewRequest("POST", endPoint, &buffer)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create POST request to %s: %w", endPoint, err)
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
 
@@ -91,7 +92,7 @@ func SendClaimFileToCollector(endPoint, claimFilePath, executedBy, partnerName, 
 	// Temporary end point
 	postReq, err := createSendToCollectorPostRequest(endPoint, claimFilePath, executedBy, partnerName, password)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create collector POST request: %w", err)
 	}
 
 	client := &http.Client{
@@ -99,7 +100,7 @@ func SendClaimFileToCollector(endPoint, claimFilePath, executedBy, partnerName, 
 	}
 	resp, err := client.Do(postReq)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to send claim file to collector at %s: %w", endPoint, err)
 	}
 	defer resp.Body.Close()
 	return nil

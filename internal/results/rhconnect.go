@@ -142,7 +142,7 @@ func SendResultsToConnectAPI(zipFile, apiKey, connectBaseURL, certID, proxyURL, 
 
 	claimFile, err := os.Open(zipFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open zip file %s for upload: %w", zipFile, err)
 	}
 	defer claimFile.Close()
 
@@ -152,25 +152,25 @@ func SendResultsToConnectAPI(zipFile, apiKey, connectBaseURL, certID, proxyURL, 
 	}
 
 	if _, err = io.Copy(fw, claimFile); err != nil {
-		return err
+		return fmt.Errorf("failed to copy zip file to multipart writer: %w", err)
 	}
 
 	// Create a form field
 	err = createFormField(w, "type", "RhocpBestPracticeTestResult")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create 'type' form field: %w", err)
 	}
 
 	// Create a form field
 	err = createFormField(w, "certId", certID)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create 'certId' form field: %w", err)
 	}
 
 	// Create a form field
 	err = createFormField(w, "description", "CNF Test Results")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create 'description' form field: %w", err)
 	}
 
 	w.Close()

@@ -20,6 +20,7 @@ package scaling
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/redhat-best-practices-for-k8s/certsuite/internal/clientsholder"
@@ -88,14 +89,12 @@ func scaleStatefulsetHelper(clients *clientsholder.ClientsHolder, ssClient v1.St
 		// RetryOnConflict uses exponential backoff to avoid exhausting the apiserver
 		ss, err := ssClient.Get(context.TODO(), name, v1machinery.GetOptions{})
 		if err != nil {
-			logger.Error("Failed to get latest version of statefulset %s:%s with error %s", namespace, name, err)
-			return err
+			return fmt.Errorf("failed to get statefulset %s/%s: %w", namespace, name, err)
 		}
 		ss.Spec.Replicas = &replicas
 		_, err = clients.K8sClient.AppsV1().StatefulSets(namespace).Update(context.TODO(), ss, v1machinery.UpdateOptions{})
 		if err != nil {
-			logger.Error("Cannot update statefulset %s:%s", namespace, name)
-			return err
+			return fmt.Errorf("failed to update statefulset %s/%s: %w", namespace, name, err)
 		}
 		if !podsets.WaitForStatefulSetReady(namespace, name, timeout, logger) {
 			logger.Error("Cannot update statefulset %s:%s", namespace, name)
@@ -165,15 +164,13 @@ func scaleHpaStatefulSetHelper(hpscaler hps.HorizontalPodAutoscalerInterface, hp
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		hpa, err := hpscaler.Get(context.TODO(), hpaName, v1machinery.GetOptions{})
 		if err != nil {
-			logger.Error("Cannot update autoscaler to scale %s:%s, err=%v", namespace, statefulsetName, err)
-			return err
+			return fmt.Errorf("failed to get HPA %s in namespace %s: %w", hpaName, namespace, err)
 		}
 		hpa.Spec.MinReplicas = &min
 		hpa.Spec.MaxReplicas = max
 		_, err = hpscaler.Update(context.TODO(), hpa, v1machinery.UpdateOptions{})
 		if err != nil {
-			logger.Error("Cannot update autoscaler to scale %s:%s, err=%v", namespace, statefulsetName, err)
-			return err
+			return fmt.Errorf("failed to update HPA %s in namespace %s: %w", hpaName, namespace, err)
 		}
 		if !podsets.WaitForStatefulSetReady(namespace, statefulsetName, timeout, logger) {
 			logger.Error("StatefulSet not ready after scale operation %s:%s", namespace, statefulsetName)

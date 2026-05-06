@@ -293,7 +293,7 @@ func showFailures(_ *cobra.Command, _ []string) error {
 	// Check claim format version
 	err = claim.CheckVersion(claimScheme.Claim.Versions.ClaimFormat)
 	if err != nil {
-		return err
+		return fmt.Errorf("claim format version check failed: %w", err)
 	}
 
 	// Order test case results by test suite, using a helper map.

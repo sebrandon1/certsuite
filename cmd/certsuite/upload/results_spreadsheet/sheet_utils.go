@@ -65,7 +65,7 @@ func addBasicFilterToSpreadSheet(srv *sheets.Service, spreadsheet *sheets.Spread
 		Requests: requests,
 	}).Do()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to apply basic filter to spreadsheet: %w", err)
 	}
 	return nil
 }
@@ -107,7 +107,7 @@ func addDescendingSortFilterToSheet(srv *sheets.Service, spreadsheet *sheets.Spr
 		Requests: requests,
 	}).Do()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to apply descending sort filter to sheet %s: %w", sheetName, err)
 	}
 	return nil
 }
@@ -164,5 +164,8 @@ func addFilterByFailedAndMandatoryToSheet(srv *sheets.Service, spreadsheet *shee
 	_, err = srv.Spreadsheets.BatchUpdate(spreadsheet.SpreadsheetId, &sheets.BatchUpdateSpreadsheetRequest{
 		Requests: requests,
 	}).Do()
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to apply filter for failed mandatory tests to sheet %s: %w", sheetName, err)
+	}
+	return nil
 }
