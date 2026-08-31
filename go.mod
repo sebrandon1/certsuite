@@ -20,8 +20,8 @@ require (
 	github.com/operator-framework/api v0.45.0
 	github.com/operator-framework/operator-lifecycle-manager v0.42.0
 	github.com/redhat-best-practices-for-k8s/certsuite-claim v1.0.66
-	github.com/redhat-best-practices-for-k8s/oct v0.0.66
-	github.com/redhat-best-practices-for-k8s/privileged-daemonset v1.0.75
+	github.com/redhat-best-practices-for-k8s/oct v0.0.67
+	github.com/redhat-best-practices-for-k8s/privileged-daemonset v1.0.76
 	github.com/redhat-openshift-ecosystem/openshift-preflight v0.0.0-20260421203005-eb87e5b2d67a
 	github.com/robert-nix/ansihtml v1.0.1
 	github.com/spf13/cobra v1.10.2
@@ -32,10 +32,10 @@ require (
 	google.golang.org/api v0.290.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v4 v4.2.3
-	k8s.io/api v0.36.3
+	k8s.io/api v0.36.4
 	k8s.io/apiextensions-apiserver v0.36.2
-	k8s.io/apimachinery v0.36.3
-	k8s.io/client-go v0.36.3
+	k8s.io/apimachinery v0.36.4
+	k8s.io/client-go v0.36.4
 	k8s.io/kubectl v0.36.2
 	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
 )
@@ -203,7 +203,7 @@ require (
 	k8s.io/component-base v0.36.2 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260317180543-43fb72c5454a // indirect
-	k8s.io/streaming v0.36.3 // indirect
+	k8s.io/streaming v0.36.4 // indirect
 	modernc.org/libc v1.37.6 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.2 // indirect
